@@ -4,7 +4,7 @@ A PowerShell Module for Performing Synthetic Web Transactions
 # Purpose
 PSSynthetics is a PowerShell module that allows you to similate a user using a website. A few use cases for this module:
 - Testing web site functionality after down time or maintenance 
-- Running through a transaction when work on bug fixes for the web  code
+- Running through a transaction when working on bug fixes
 - Possibly a super low budget synthetic user monitoring system. (Run as shedule task and send email if transactions fails)
 
 # How It Works
