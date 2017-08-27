@@ -1,4 +1,4 @@
-﻿Function Start-SyntheticTransaction
+Function Start-SyntheticTransaction
 {
     <#
         .SYNOPSIS
@@ -23,19 +23,10 @@
             [Parameter(Mandatory=$true, Position=0)]
             [validateScript({Test-Path -Path $_ -PathType Leaf})]
             [string]$FilePath
-
-            #[Parameter(Position=1)]
-            #[string]$ResultPath = "$env:USERPROFILE\Desktop\$(get-date -Format 'yyyy-MM-dd_hhmmss')"
         )
-
 
     begin
         {
-            <#if (-not(Test-Path -Path $ResultPath))
-                {
-                    New-Item -Path $ResultPath -ItemType Directory | Out-Null
-                }#>
-
             [xml]$xmlFile = Get-Content -Path $FilePath
             $steps = $xmlFile.Transaction.Configuration.Step
 
@@ -60,9 +51,138 @@
                     $stepResults | Add-Member -MemberType NoteProperty -Name "Description" -Value "$stepDescription"
 
                     [datetime]$stepStartTime = Get-Date
+
                     try
                         {
-                            if ($stepAction -eq "clickElementById")
+                            if ($stepAction -eq "back")
+                                {
+                                    $preActionLocation = $internetExplorer.LocationURL
+                                    $internetExplorer.GoBack()
+
+                                    Wait-InternetExplorer
+
+                                    if ($preActionLocation -ne ($internetExplorer.LocationURL))
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                        }
+
+                                    else
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
+                                        }            
+
+                                    [datetime]$stepEndTime = Get-Date
+                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
+                                    $transactionResults += $stepResults
+                                }
+
+                            elseif ($stepAction -eq "forward")
+                                {
+                                    $preActionLocation = $internetExplorer.LocationURL
+                                    $internetExplorer.GoForward()
+
+                                    Wait-InternetExplorer
+
+                                    if ($preActionLocation -ne ($internetExplorer.LocationURL))
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                        }
+
+                                    else
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
+                                        }            
+
+                                    [datetime]$stepEndTime = Get-Date
+                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
+                                    $transactionResults += $stepResults
+                                }
+
+                            elseif ($stepAction -eq "Refresh")
+                                {
+                                    $preActionLocation = $internetExplorer.LocationURL
+                                    $internetExplorer.Refresh()
+
+                                    Wait-InternetExplorer
+
+                                    if ($preActionLocation -eq ($internetExplorer.LocationURL))
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                        }
+
+                                    else
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
+                                        }            
+
+                                    [datetime]$stepEndTime = Get-Date
+                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
+                                    $transactionResults += $stepResults
+                                }
+
+                            elseif ($stepAction -eq "get_location_name")
+                                {
+                                    $locationName = $internetExplorer.LocationName
+
+                                    Wait-InternetExplorer
+
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Requested" -Value "$locationName"
+                                }
+
+                            elseif ($stepAction -eq "get_location_url")
+                                {
+                                    $locationURL = $internetExplorer.LocationURL
+
+                                    Wait-InternetExplorer
+
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Requested" -Value "$locationURL"
+                                }
+
+                            elseif ($stepAction -eq "get_cookie")
+                                {
+                                    $cookie = $internetExplorer.Document.Cookie
+
+                                    Wait-InternetExplorer
+
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Requested" -Value "$cookie"
+                                }
+
+                            elseif ($stepAction -eq "set_cookie")
+                                {
+                                    [string]$cookie = $step.value
+                                    [string] $preActionCookie = $internetExplorer.Document.Cookie
+                                    $internetExplorer.Document.Cookie = "$cookie"
+
+                                    Wait-InternetExplorer
+
+                                    if ($preActionCookie -ne ($internetExplorer.Document.Cookie))
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                        }
+                                    else
+                                }
+
+                            elseif ($stepAction -eq "get_page_title")
+                                {
+                                    $internetExplorer.Document.IHTMLDocument2_title
+
+                                    Wait-InternetExplorer
+                                }
+
+
+                            elseif ($stepAction -eq "set_page_title")
+                                {
+                                    [stirng]$title = $step.value
+                                    $internetExplorer.Document.IHTMLDocument2_title = "<string>"
+
+                                    Wait-InternetExplorer
+                                }
+
+
+                            elseif ($stepAction -eq "click_element_by_id")
                                 {
                                     [string]$stepElement = $step.element
                                     $internetExplorer.Document.IHTMLDocument3_getElementByID("$stepElement").Click()
@@ -71,13 +191,13 @@
 
                                     $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"        
 
-                            [datetime]$stepEndTime = Get-Date
-                            [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                            $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                            $transactionResults += $stepResults
-                        }
+                                    [datetime]$stepEndTime = Get-Date
+                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
+                                    $transactionResults += $stepResults
+                                }
 
-                            elseif ($stepAction -eq "clickElementByTagName")
+                            elseif ($stepAction -eq "click_element_by_tag_name")
                                 {
                                     [string]$stepTag = $step.tag
                                     [string]$stepProperty = $step.property
@@ -89,11 +209,11 @@
 
                                     $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
 
-                            [datetime]$stepEndTime = Get-Date
-                            [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                            $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                            $transactionResults += $stepResults
-                        }
+                                    [datetime]$stepEndTime = Get-Date
+                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
+                                    $transactionResults += $stepResults
+                                }
                        
                             elseif ($stepAction -eq "navigate")
                                 {
@@ -102,25 +222,15 @@
 
                                     Wait-InternetExplorer
 
-                                    if (($internetExplorer.LocationURL) -eq $stepUrl)
-                                        {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
-                                        }
+                                    [datetime]$stepEndTime = Get-Date
+                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
+                                    $transactionResults += $stepResults
+                                }
 
-                                    else
-                                        {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false" 
-                                        }
-
-                            [datetime]$stepEndTime = Get-Date
-                            [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                            $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                            $transactionResults += $stepResults
-                        }
-
-                            elseif ($stepAction -eq "validateInnerText")
+                            elseif ($stepAction -eq "validate_text")
                                 {
-                                    [string]$stepContent = $step.content
+                                    [string]$stepContent = $step.value
 
                                     if (($internetExplorer.Document.IHTMLDocument3_documentElement.innerText.Contains("$stepContent")) -eq $true)
                                         {
@@ -132,13 +242,13 @@
                                             $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
                                         }
 
-                            [datetime]$stepEndTime = Get-Date
-                            [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                            $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                            $transactionResults += $stepResults
-                        }
+                                    [datetime]$stepEndTime = Get-Date
+                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
+                                    $transactionResults += $stepResults
+                                }
 
-                            elseif ($stepAction -eq "valueElementbyID")
+                            elseif ($stepAction -eq "set_element_by_id")
                                 {
                                     [string]$stepElement = $step.element
                                     [string]$stepValue = $step.value
@@ -147,22 +257,27 @@
 
                                     Wait-InternetExplorer
 
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                    if (($internetExplorer.Document.IHTMLDocument3_getElementByID("$stepElement").value) -eq "$stepValue")
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                        }
 
-                            [datetime]$stepEndTime = Get-Date
-                            [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                            $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                            $transactionResults += $stepResults
-                        }
+                                    else
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
+                                        }
+
+                                    [datetime]$stepEndTime = Get-Date
+                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
+                                    $transactionResults += $stepResults
+                                }
                         }
 
                     catch [System.Management.Automation.ErrorRecord]
                         {
-                            #$internetExplorer.Document.body.outerHTML | Out-File -FilePath "$ResultPath\$stepNumber.html"
-                           
                             $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
                             $stepResults | Add-Member -MemberType NoteProperty -Name "Error" -Value "$stepElement not found on page"
-                            #$stepResults | Add-Member -MemberType NoteProperty -Name "Snapshot" -Value "&lt;a href=&quot;file:///$ResultPath\$stepNumber&quot;&gt;Show Error&lt;/a&gt;"
                         }
 
                     catch
@@ -186,9 +301,16 @@
 }
 
 Function Wait-InternetExplorer
-    {
-        While ($internetExplorer.Busy -eq $true)
-            {
-                Start-Sleep -Seconds 2
-            }
-    }
+{
+    <#
+        .SYNOPSIS
+            Helper Fucntion that Looks at Internet Explorers State.
+        .DESCRIPTION
+            Helper Fucntion that Looks at Internet Explorers State. If state is busy we wait two seconds, if not we conitnue.
+    #>
+
+    While ($internetExplorer.Busy -eq $true)
+        {
+            Start-Sleep -Seconds 2
+        }
+}
