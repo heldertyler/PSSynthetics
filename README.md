@@ -1,4 +1,4 @@
-## PSSynthetics
+## PSSynthetics - PowerShell Browser Automation
 A PowerShell Module for Performing Synthetic Web Transactions
 
 ## Purpose
