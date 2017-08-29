@@ -31,8 +31,9 @@ Function Start-SyntheticTransaction
             $steps = $xmlFile.Transaction.Configuration.Step
 
             $internetExplorer = New-Object -ComObject internetexplorer.application
-            $internetExplorer.Visible = $xmlFile.Transaction.Configuration.internetExplorerSettings.uiVisible
-            $internetExplorer.FullScreen = $xmlFile.Transaction.Configuration.internetExplorerSettings.uiFullScreen
+            $internetExplorer.Visible = $xmlFile.Transaction.Configuration.internetExplorerSettings.enable_ui
+            $internetExplorer.FullScreen = $xmlFile.Transaction.Configuration.internetExplorerSettings.enable_full_screen
+			$internetExplorer.AddressBar = $xmlFile.Transaction.Configuration.internetExplorerSettings.enable_address_bar
 
             [array]$transactionResults = @()
         }
@@ -63,18 +64,13 @@ Function Start-SyntheticTransaction
 
                                     if ($preActionLocation -ne ($internetExplorer.LocationURL))
                                         {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$true"
                                         }
 
                                     else
                                         {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$false"
                                         }            
-
-                                    [datetime]$stepEndTime = Get-Date
-                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                                    $transactionResults += $stepResults
                                 }
 
                             elseif ($stepAction -eq "forward")
@@ -86,18 +82,13 @@ Function Start-SyntheticTransaction
 
                                     if ($preActionLocation -ne ($internetExplorer.LocationURL))
                                         {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$true"
                                         }
 
                                     else
                                         {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$false"
                                         }            
-
-                                    [datetime]$stepEndTime = Get-Date
-                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                                    $transactionResults += $stepResults
                                 }
 
                             elseif ($stepAction -eq "Refresh")
@@ -109,18 +100,13 @@ Function Start-SyntheticTransaction
 
                                     if ($preActionLocation -eq ($internetExplorer.LocationURL))
                                         {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$true"
                                         }
 
                                     else
                                         {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$false"
                                         }            
-
-                                    [datetime]$stepEndTime = Get-Date
-                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                                    $transactionResults += $stepResults
                                 }
 
                             elseif ($stepAction -eq "get_location_name")
@@ -129,7 +115,7 @@ Function Start-SyntheticTransaction
 
                                     Wait-InternetExplorer
 
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Requested" -Value "$locationName"
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$locationName"
                                 }
 
                             elseif ($stepAction -eq "get_location_url")
@@ -138,7 +124,7 @@ Function Start-SyntheticTransaction
 
                                     Wait-InternetExplorer
 
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Requested" -Value "$locationURL"
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$locationURL"
                                 }
 
                             elseif ($stepAction -eq "get_cookie")
@@ -147,7 +133,7 @@ Function Start-SyntheticTransaction
 
                                     Wait-InternetExplorer
 
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Requested" -Value "$cookie"
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$cookie"
                                 }
 
                             elseif ($stepAction -eq "set_cookie")
@@ -160,25 +146,41 @@ Function Start-SyntheticTransaction
 
                                     if ($preActionCookie -ne ($internetExplorer.Document.Cookie))
                                         {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$true"
                                         }
                                     else
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$false"
+                                        }
                                 }
 
                             elseif ($stepAction -eq "get_page_title")
                                 {
-                                    $internetExplorer.Document.IHTMLDocument2_title
+                                    [string]$pageTitle = $internetExplorer.Document.IHTMLDocument2_title
 
                                     Wait-InternetExplorer
+
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$pageTitle"
                                 }
 
 
                             elseif ($stepAction -eq "set_page_title")
                                 {
-                                    [stirng]$title = $step.value
-                                    $internetExplorer.Document.IHTMLDocument2_title = "<string>"
+                                    [stirng]$pageTitle = $step.value
+                                    [string]$preActionTitle = $internetExplorer.Document.IHTMLDocument2_title
+                                    $internetExplorer.Document.IHTMLDocument2_title = "$pageTitle"
 
                                     Wait-InternetExplorer
+
+                                    if ($preActionTitle -ne ($internetExplorer.Document.IHTMLDocument2_title))
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$true"
+                                        }
+
+                                    else
+                                        {
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$false"
+                                        }
                                 }
 
 
@@ -189,43 +191,31 @@ Function Start-SyntheticTransaction
 
                                     Wait-InternetExplorer
 
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"        
-
-                                    [datetime]$stepEndTime = Get-Date
-                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                                    $transactionResults += $stepResults
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$true"
                                 }
 
                             elseif ($stepAction -eq "click_element_by_tag_name")
                                 {
                                     [string]$stepTag = $step.tag
                                     [string]$stepProperty = $step.property
-                                    [string]$stepPropertyValue = $step.propertyValue
+                                    [string]$stepValue = $step.Value
 
-                                    ($internetExplorer.Document.IHTMLDocument3_getElementsByTagName("$stepTag") | Where-Object {$_.$stepProperty -eq "$stepPropertyValue"} | Select-Object -First 1).Click()
+                                    ($internetExplorer.Document.IHTMLDocument3_getElementsByTagName("$stepTag") | Where-Object {$_.$stepProperty -eq "$stepValue"} | Select-Object -First 1).Click()
 
                                     Wait-InternetExplorer
 
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
-
-                                    [datetime]$stepEndTime = Get-Date
-                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                                    $transactionResults += $stepResults
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$true"
                                 }
                        
                             elseif ($stepAction -eq "navigate")
                                 {
                                     [string]$stepUrl = $step.url
+                                    [string]$preActionLocation = $internetExplorer.LocationURL
                                     $internetExplorer.Navigate("$stepUrl")
 
                                     Wait-InternetExplorer
 
-                                    [datetime]$stepEndTime = Get-Date
-                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                                    $transactionResults += $stepResults
+                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$true"
                                 }
 
                             elseif ($stepAction -eq "validate_text")
@@ -234,18 +224,13 @@ Function Start-SyntheticTransaction
 
                                     if (($internetExplorer.Document.IHTMLDocument3_documentElement.innerText.Contains("$stepContent")) -eq $true)
                                         {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$true"
                                         }
 
                                     else
                                         {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$false"
                                         }
-
-                                    [datetime]$stepEndTime = Get-Date
-                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                                    $transactionResults += $stepResults
                                 }
 
                             elseif ($stepAction -eq "set_element_by_id")
@@ -259,24 +244,19 @@ Function Start-SyntheticTransaction
 
                                     if (($internetExplorer.Document.IHTMLDocument3_getElementByID("$stepElement").value) -eq "$stepValue")
                                         {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$true"
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$true"
                                         }
 
                                     else
                                         {
-                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
+                                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$false"
                                         }
-
-                                    [datetime]$stepEndTime = Get-Date
-                                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
-                                    $transactionResults += $stepResults
                                 }
                         }
 
                     catch [System.Management.Automation.ErrorRecord]
                         {
-                            $stepResults | Add-Member -MemberType NoteProperty -Name "Passed" -Value "$false"
+                            $stepResults | Add-Member -MemberType NoteProperty -Name "Results" -Value "$false"
                             $stepResults | Add-Member -MemberType NoteProperty -Name "Error" -Value "$stepElement not found on page"
                         }
 
@@ -288,6 +268,11 @@ Function Start-SyntheticTransaction
                             Write-Output "You Shopuld Handle This Error Type: $errorType"
                             Write-Output "$errorMessage"
                         }
+
+                    [datetime]$stepEndTime = Get-Date
+                    [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
+                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
+                    $transactionResults += $stepResults
                 }
         }
 
