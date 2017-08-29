@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <Transaction>
 	<Meta>
-		<transactionName>Tria Beauty Transaction</transactionName>
-		<transactionVersion>1.0</transactionVersion>
-		<lastModified>2017-07-04</lastModified>
-		<createdBy>Tyler Helder</createdBy>
+		<transaction_name>Tria Beauty Transaction</transaction_name>
+		<transaction_version>1.0</transaction_version>
+		<last_modified>2017-07-04</last_modified>
+		<created_by>Tyler Helder</created_by>
 	</Meta>
 	<Configuration>
 		<internetExplorerSettings>
-			<uiVisible>false</uiVisible> <!--true or false-->
-			<uiFullScreen>false</uiFullScreen> <!--true or false-->
+			<enable_ui>true</enable_ui> <!--true or false-->
+			<enable_full_screen>true</enable_full_screen> <!--true or false-->
+			<enable_address_bar>true</enable_address_bar> <!--true or false-->
 		</internetExplorerSettings>
 		<Step>
 			<stepNumber>1</stepNumber>
@@ -17,6 +18,7 @@
 			<url>https://www.triabeauty.com/</url>
 			<description>Tria Beauty Home Page</description>
 		</Step>
+		
 		<Step>
 			<stepNumber>2</stepNumber>
 			<action>navigate</action>
@@ -25,18 +27,18 @@
 		</Step>
 		<Step>
 			<stepNumber>3</stepNumber>
-			<action>clickElementByTagName</action>
+			<action>click_element_by_tag_name</action>
 			<tag>img</tag>
 			<property>id</property>
-			<propertyValue>lilacimg</propertyValue>
+			<value>lilacimg</value>
 			<description>Click Device Color Lilac</description>
 		</Step>
 		<Step>
 			<stepNumber>4</stepNumber>
-			<action>clickElementByTagName</action>
+			<action>click_element_by_tag_name</action>
 			<tag>input</tag>
 			<property>id</property>
-			<propertyValue>addToCartButton</propertyValue>
+			<value>addToCartButton</value>
 			<description>Click Add to Cart Button</description>
 		</Step>
 		<Step>
@@ -47,21 +49,21 @@
 		</Step>	
 		<Step>
 			<stepNumber>6</stepNumber>
-			<action>validateInnerText</action>
+			<action>validate_text</action>
 			<content>Hair Removal Laser 4X</content>
 			<description>Validate Product in Cart</description>
 		</Step>		
 		<Step>
 			<stepNumber>7</stepNumber>
-			<action>clickElementByTagName</action>
+			<action>click_element_by_tag_name</action>
 			<tag>span</tag>
 			<property>className</property>
-			<propertyValue>removeQty</propertyValue>
+			<value>removeQty</value>
 			<description>Remove Product From Cart</description>
 		</Step>
 		<Step>
 			<stepNumber>8</stepNumber>
-			<action>validateInnerText</action>
+			<action>validate_text</action>
 			<content>Your shopping bag is empty</content>
 			<description>Validate Cart is Empty</description>
 		</Step>
