@@ -31,9 +31,9 @@ Function Start-SyntheticTransaction
             $steps = $xmlFile.Transaction.Configuration.Step
 
             $internetExplorer = New-Object -ComObject internetexplorer.application
-            $internetExplorer.Visible = $xmlFile.Transaction.Configuration.internetExplorerSettings.enable_ui
-            $internetExplorer.FullScreen = $xmlFile.Transaction.Configuration.internetExplorerSettings.enable_full_screen
-			$internetExplorer.AddressBar = $xmlFile.Transaction.Configuration.internetExplorerSettings.enable_address_bar
+            $internetExplorer.Visible = [bool]$xmlFile.Transaction.Configuration.internetExplorerSettings.enable_ui
+            $internetExplorer.FullScreen = [bool]$xmlFile.Transaction.Configuration.internetExplorerSettings.enable_full_screen
+			$internetExplorer.AddressBar = [bool]$xmlFile.Transaction.Configuration.internetExplorerSettings.enable_address_bar
 
             [array]$transactionResults = @()
         }
@@ -129,7 +129,7 @@ Function Start-SyntheticTransaction
 
                             elseif ($stepAction -eq "get_cookie")
                                 {
-                                    $cookie = $internetExplorer.Document.Cookie
+                                    $cookie = ($internetExplorer.Document.Cookie).split('; ').split('`n')
 
                                     Wait-InternetExplorer
 
@@ -210,6 +210,7 @@ Function Start-SyntheticTransaction
                             elseif ($stepAction -eq "navigate")
                                 {
                                     [string]$stepUrl = $step.url
+                                    [string]$stepRefresh = $step.refresh
                                     [string]$preActionLocation = $internetExplorer.LocationURL
                                     $internetExplorer.Navigate("$stepUrl")
 
@@ -271,7 +272,7 @@ Function Start-SyntheticTransaction
 
                     [datetime]$stepEndTime = Get-Date
                     [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time in Step" -Value "$stepTimeTaken Seconds"
+                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time (Sec)" -Value "$stepTimeTaken"
                     $transactionResults += $stepResults
                 }
         }
@@ -297,5 +298,42 @@ Function Wait-InternetExplorer
     While ($internetExplorer.Busy -eq $true)
         {
             Start-Sleep -Seconds 2
+        }
+}
+
+Function Start-RegisterDLLGac
+{
+    <#
+        .SYNOPSIS
+            Helper function to register required DLL in Global Assembly Cache (GAC)
+        .DESCRIPTION
+            This function registers the provded dll file and registers the dll in GAC. Microsoft.mshtml.dll must be registered in order for Start-SyntheticTransaction function to work.
+            If Microsoft office 2010 or better is installed this dll is already registered, if not this dll must be registered manually in GAC.
+        .PARAMETER FilePath
+            Provide the full path to the dll file to register.
+        .EXAMPLE
+            PS> Start-RegisterDLLGac -FilePath "C:\Program Files (x86)\Microsoft.NET\Primary Interop Assemblies\Microsoft.mshtml.dll" -NetVersion "4.0.0.0"
+                This Example will register the Microsoft.mshtml.dll in GAC to enable use of its functionallity
+        .INPUTS
+            Dll
+    #>   
+	param
+		(
+			[Parameter(Mandatory=$true, Position=0)]
+			[string]$FilePath,
+			[Parameter(Mandatory=$true, Position=1)]
+			[ValidateSet("2.0.0.0","4.0.0.0")]
+			[string]$NetVersion
+		)
+
+    if ((Get-FileHash -Path $FilePath).hash -eq "ADCF85B4478CCA9563F26B05F0D2B975CD95E64D78DC609C59A22869C3A521D4")
+        {
+	        [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=$NetVersion, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a") | Out-Null
+	        $publish = New-Object System.EnterpriseServices.Internal.Publish 
+            $publish.GacInstall("$Path")
+        }
+    else
+        {
+            Write-Output "File Hash Provided Doesn't Match Official DLL File Hash, Please Check $FilePath"
         }
 }
