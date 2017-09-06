@@ -22,7 +22,16 @@ Function Start-SyntheticTransaction
             [CmdletBinding(SupportsShouldProcess=$true)]
             [Parameter(Mandatory=$true, Position=0)]
             [validateScript({Test-Path -Path $_ -PathType Leaf})]
-            [string]$FilePath
+            [string]$FilePath,
+
+            [Parameter(Mandatory=$false, Position=1)]
+            [switch] $EnableUI,
+
+            [Parameter(Mandatory=$false, Position=2)]
+            [switch] $EnableFullScreen,
+
+            [Parameter(Mandatory=$false, Position=3)]
+            [switch] $EnableAddressBar
         )
 
     begin
@@ -31,9 +40,10 @@ Function Start-SyntheticTransaction
             $steps = $xmlFile.Transaction.Configuration.Step
 
             $internetExplorer = New-Object -ComObject internetexplorer.application
-            $internetExplorer.Visible = [bool]$xmlFile.Transaction.Configuration.internetExplorerSettings.enable_ui
-            $internetExplorer.FullScreen = [bool]$xmlFile.Transaction.Configuration.internetExplorerSettings.enable_full_screen
-			$internetExplorer.AddressBar = [bool]$xmlFile.Transaction.Configuration.internetExplorerSettings.enable_address_bar
+            $internetExplorer.Visible = $EnableUI.IsPresent
+            $internetExplorer.FullScreen = $EnableFullScreen.IsPresent
+            $internetExplorer.AddressBar = $EnableAddressBar.IsPresent
+
 
             [array]$transactionResults = @()
         }
@@ -272,7 +282,7 @@ Function Start-SyntheticTransaction
 
                     [datetime]$stepEndTime = Get-Date
                     [int32]$stepTimeTaken = (New-TimeSpan -Start $stepStartTime -End $stepEndTime).Seconds
-                    $stepResults | Add-Member -MemberType NoteProperty -Name "Time (Sec)" -Value "$stepTimeTaken"
+                    $stepResults | Add-Member -MemberType NoteProperty -Name "Step Time (Sec)" -Value "$stepTimeTaken"
                     $transactionResults += $stepResults
                 }
         }
